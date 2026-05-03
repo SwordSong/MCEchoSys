@@ -1,0 +1,45 @@
+[project]
+name = "mc-sys"
+version = "0.1.0"
+description = "鸣潮强化识别工具 — 实时声骸词缀分析助手"
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python",
+    "mss",
+    "pyqt6",
+    "numpy<2",
+    "pandas",
+    "requests",
+    "sqlalchemy",
+    "alembic",
+    "psutil",
+    "dxcam",
+    "windows-capture",
+    "rapidocr-onnxruntime>=1.4.4",
+    "onnxruntime-directml",
+    "markupsafe<3.0.3",
+    "cryptography>=47.0.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "ultralytics",
+]
+dev = [
+    "pytest",
+    "pyinstaller",
+]
+
+[tool.uv]
+# GPU 版 PyTorch 需要额外索引
+extra-index-url = ["https://download.pytorch.org/whl/cu121"]
+
+[tool.uv.sources]
+# 如需锁定特定 torch 版本可在此添加
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

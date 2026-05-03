@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鸣潮强化识别工具</title>
+  <meta name="description" content="实时声骸面板识别、辅音概率推算和强化策略辅助工具。">
+  <link rel="preload" href="./assets/hero-dashboard.svg" as="image">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1017;
+      --surface: #121a23;
+      --surface-2: #192331;
+      --line: #2d3b4a;
+      --text: #edf6ff;
+      --muted: #a9bdca;
+      --teal: #37d4bd;
+      --amber: #f3c45f;
+      --blue: #79a9ff;
+      --rose: #ef7d86;
+      --green: #8de59b;
+      --max: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .nav {
+      position: fixed;
+      z-index: 10;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      border-bottom: 1px solid rgba(190, 214, 232, 0.16);
+      background: rgba(8, 13, 20, 0.78);
+      backdrop-filter: blur(16px);
+    }
+
+    .nav-inner {
+      width: min(var(--max), calc(100% - 40px));
+      height: 100%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--teal);
+      border-radius: 8px;
+      transform: rotate(45deg);
+      box-shadow: inset 0 0 0 5px rgba(55, 212, 189, 0.13);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .hero {
+      min-height: 84svh;
+      position: relative;
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      padding: 112px 0 72px;
+      background-image:
+        linear-gradient(90deg, rgba(7, 11, 18, 0.93) 0%, rgba(7, 11, 18, 0.76) 46%, rgba(7, 11, 18, 0.22) 100%),
+        url("./assets/hero-dashboard.svg");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-inner {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--teal);
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 18px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      background: var(--teal);
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(42px, 7vw, 88px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+      margin: 24px 0 0;
+      color: #d7e6f2;
+      font-size: clamp(17px, 2vw, 22px);
+      line-height: 1.7;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 34px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+    }
+
+    .button.primary {
+      color: #071018;
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: min(var(--max), calc(100% - 40px));
+      margin: -34px auto 0;
+      position: relative;
+      z-index: 2;
+      border: 1px solid var(--line);
+      background: #101821;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .metric {
+      padding: 22px 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      border-right: 0;
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--text);
+      font-size: 23px;
+      margin-bottom: 7px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    section {
+      padding: 92px 0;
+    }
+
+    .section-inner {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .section-kicker {
+      color: var(--amber);
+      font-weight: 800;
+      margin: 0 0 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.14;
+      letter-spacing: 0;
+    }
+
+    .section-copy {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.8;
+      margin: 18px 0 0;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature {
+      min-height: 210px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .feature .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #071018;
+      margin-bottom: 18px;
+    }
+
+    .tag.teal { background: var(--teal); }
+    .tag.amber { background: var(--amber); }
+    .tag.blue { background: var(--blue); }
+    .tag.rose { background: var(--rose); }
+    .tag.green { background: var(--green); }
+
+    .feature h3 {
+      margin: 0 0 12px;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    .pipeline {
+      background: #0f171f;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .step {
+      padding: 18px;
+      min-height: 144px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid #334454;
+    }
+
+    .step-index {
+      color: var(--teal);
+      font-family: Consolas, monospace;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 17px;
+      margin-bottom: 9px;
+    }
+
+    .step span {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 28px;
+    }
+
+    .panel h3 {
+      margin: 0 0 18px;
+      font-size: 24px;
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      color: var(--muted);
+      line-height: 1.7;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    .list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 11px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .code {
+      margin: 18px 0 0;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid #334454;
+      background: #091018;
+      color: #dcecff;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      overflow-x: auto;
+      line-height: 1.8;
+    }
+
+    footer {
+      padding: 34px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: #080d13;
+    }
+
+    .footer-inner {
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        min-height: 80svh;
+        background-position: 62% center;
+      }
+
+      .metrics,
+      .feature-grid,
+      .steps,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric:last-child {
+        border-bottom: 0;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .nav-inner,
+      .hero-inner,
+      .section-inner,
+      .footer-inner,
+      .metrics {
+        width: min(100% - 28px, var(--max));
+      }
+
+      .hero {
+        padding-top: 98px;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="主导航">
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="鸣潮强化识别工具首页">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>MC Enhance Helper</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">能力</a>
+        <a href="#pipeline">流程</a>
+        <a href="#release">发布</a>
+        <a href="#quick-start">启动</a>
+      </div>
+    </div>
+  </nav>
+
+  <header id="top" class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Windows 桌面浮窗工具</p>
+      <h1>鸣潮强化识别工具</h1>
+      <p class="hero-copy">
+        实时识别声骸面板，跟踪辅音开孔过程，用本地样本、概率推断和成本分析给出继续强化、暂存或换声骸的建议。
+      </p>
+      <div class="actions">
+        <a class="button primary" href="#quick-start">快速启动</a>
+        <a class="button" href="#release">查看发布方案</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="metrics" aria-label="项目指标">
+    <div class="metric">
+      <strong>离线识别</strong>
+      <span>截图、OCR、检测均在本地运行</span>
+    </div>
+    <div class="metric">
+      <strong>ONNX 发布</strong>
+      <span>用户包不携带 CUDA Torch</span>
+    </div>
+    <div class="metric">
+      <strong>SQLite</strong>
+      <span>账号、声骸、辅音事件结构化记录</span>
+    </div>
+    <div class="metric">
+      <strong>策略可配</strong>
+      <span>套装和角色优先级由 JSON 管理</span>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="section-kicker">核心能力</p>
+        <h2>把强化过程从“盯屏感觉”变成可追踪的数据流。</h2>
+        <p class="section-copy">
+          工具围绕声骸详情页和强化页建立 active context，减少页面切换造成的误刷新，并把识别结果整理成浮窗可读的强化建议。
+        </p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="tag teal">Capture</span>
+          <h3>窗口捕获</h3>
+          <p>定位鸣潮客户端窗口，支持 WGC、DXGI、PrintWindow 等回退路径，为 OCR 和检测提供稳定帧。</p>
+        </article>
+        <article class="feature">
+          <span class="tag blue">Vision</span>
+          <h3>面板识别</h3>
+          <p>YOLO/ONNX 检测 echo_panel 与 enhance_panel，RapidOCR 读取中文面板文本并进行行列归并。</p>
+        </article>
+        <article class="feature">
+          <span class="tag amber">Parser</span>
+          <h3>词条解析</h3>
+          <p>标准化主词条、副词条和数值档位，兼容常见 OCR 错字，区分攻击、防御百分比与固定值。</p>
+        </article>
+        <article class="feature">
+          <span class="tag green">Context</span>
+          <h3>声骸会话跟踪</h3>
+          <p>以详情页为锚点维护 ActiveEchoContext，强化页只延续当前声骸，连续不匹配才切换。</p>
+        </article>
+        <article class="feature">
+          <span class="tag rose">Advice</span>
+          <h3>强化建议</h3>
+          <p>结合已有辅音、剩余孔位、有效词条概率和等级成本，推荐继续、暂存、抽离或换胚。</p>
+        </article>
+        <article class="feature">
+          <span class="tag teal">Sync</span>
+          <h3>样本同步</h3>
+          <p>本地 SQLite 断点续传，服务器返回总样本和今日样本，浮窗同步展示大数据统计。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="pipeline" class="pipeline">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="section-kicker">运行流程</p>
+        <h2>从游戏窗口到强化决策，整条链路在一个浮窗里闭环。</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-index">01</div>
+          <strong>锁定客户端</strong>
+          <span>识别进程、窗口和 UID，绑定本机账号与客户端启动状态。</span>
+        </div>
+        <div class="step">
+          <div class="step-index">02</div>
+          <strong>检测面板</strong>
+          <span>基于场景匹配和模型检测提取声骸相关区域。</span>
+        </div>
+        <div class="step">
+          <div class="step-index">03</div>
+          <strong>抽取观测</strong>
+          <span>读取名称、套装、主词条、等级、COST 和辅音槽状态。</span>
+        </div>
+        <div class="step">
+          <div class="step-index">04</div>
+          <strong>计算概率</strong>
+          <span>根据历史样本和优先级推断剩余孔位有效率。</span>
+        </div>
+        <div class="step">
+          <div class="step-index">05</div>
+          <strong>给出建议</strong>
+          <span>把概率、成本和当前结果合并成用户能立即执行的动作。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="release">
+    <div class="section-inner split">
+      <div class="panel">
+        <h3>轻量发布包</h3>
+        <ul class="list">
+          <li>开发阶段使用 <code>yolov8_custom.pt</code>、Torch 和 ultralytics。</li>
+          <li>发布阶段导出 <code>yolov8_custom.onnx</code>，用 ONNX Runtime/DirectML 推理。</li>
+          <li>打包时排除 torch、torchvision、torchaudio 和 ultralytics，避免 5GB 级运行库。</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>可更新配置</h3>
+        <ul class="list">
+          <li><code>data/*.json</code> 在开发环境直接读取仓库根目录。</li>
+          <li>打包后首次运行会把默认配置复制到 exe 同级 <code>data</code> 目录。</li>
+          <li>用户后续调整策略、词典和面板布局，只需要修改程序目录里的 JSON。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="quick-start">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="section-kicker">快速开始</p>
+        <h2>开发运行和发布构建各有一条清晰路径。</h2>
+      </div>
+      <div class="split">
+        <div class="panel">
+          <h3>开发调试</h3>
+          <pre class="code"><code>uv sync --extra gpu --extra dev
+uv run python -m src.ui.overlay</code></pre>
+        </div>
+        <div class="panel">
+          <h3>发布打包</h3>
+          <pre class="code"><code>.\export_onnx_model.ps1
+.\build_package.ps1</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <span>鸣潮强化识别工具</span>
+      <span>本地识别，本地记录，按需同步样本统计。</span>
+    </div>
+  </footer>
+</body>
+</html>

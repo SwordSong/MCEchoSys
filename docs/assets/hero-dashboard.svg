@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">鸣潮强化识别工具界面预览图</title>
+  <desc id="desc">自生成的桌面浮窗、OCR 面板、概率曲线和本地数据流视觉图。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.38" stop-color="#122234"/>
+      <stop offset="0.68" stop-color="#1e2630"/>
+      <stop offset="1" stop-color="#2b1f22"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#33dbc6" stop-opacity="0"/>
+      <stop offset="0.45" stop-color="#33dbc6" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#33dbc6" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2936"/>
+      <stop offset="1" stop-color="#111821"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0V56" fill="none" stroke="#6f8496" stroke-opacity="0.13" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+
+  <g opacity="0.32">
+    <path d="M-40 660 C190 560 310 720 540 612 C765 506 925 308 1220 398 C1410 456 1518 420 1660 320" fill="none" stroke="#73d5ff" stroke-width="4"/>
+    <path d="M-20 735 C230 610 430 790 650 650 C862 516 1040 610 1240 548 C1410 494 1502 512 1640 448" fill="none" stroke="#f5c86a" stroke-width="3"/>
+    <path d="M1040 110 L1500 110 L1500 770 L1040 770 Z" fill="#1b2430" opacity="0.42"/>
+    <path d="M1096 174 H1444 M1096 252 H1444 M1096 330 H1444 M1096 408 H1444 M1096 486 H1444 M1096 564 H1444" stroke="#d5e8f6" stroke-opacity="0.13"/>
+  </g>
+
+  <g transform="translate(138 142)" filter="url(#shadow)">
+    <rect x="0" y="0" width="520" height="594" rx="18" fill="url(#panel)" stroke="#405368"/>
+    <rect x="0" y="0" width="520" height="72" rx="18" fill="#202b38"/>
+    <rect x="0" y="54" width="520" height="18" fill="#202b38"/>
+    <text x="28" y="44" fill="#edf7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="25" font-weight="700">鸣潮强化助手</text>
+    <circle cx="470" cy="36" r="16" fill="#4a1e28" stroke="#d77982"/>
+    <path d="M464 30 L476 42 M476 30 L464 42" stroke="#ffd7dc" stroke-width="2.2" stroke-linecap="round"/>
+
+    <rect x="28" y="94" width="464" height="74" rx="10" fill="#162330" stroke="#48617a"/>
+    <text x="52" y="124" fill="#9fc3de" font-family="Consolas, monospace" font-size="15">状态=running  UID=127410949  PID=42820</text>
+    <text x="52" y="148" fill="#75e0d0" font-family="Consolas, monospace" font-size="15">延迟=18ms  OCR=ready  YOLO=ONNX</text>
+
+    <rect x="28" y="190" width="464" height="128" rx="12" fill="#132131" stroke="#5687e8" stroke-width="2"/>
+    <text x="54" y="226" fill="#eff7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="20" font-weight="700">主面板</text>
+    <text x="54" y="258" fill="#cfe2f0" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="18">声骸：海维夏 +15  COST 4</text>
+    <text x="54" y="288" fill="#cfe2f0" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="18">套装：逆光跃彩之约</text>
+    <text x="332" y="226" fill="#9fc3de" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="16">总强化 216</text>
+    <text x="332" y="254" fill="#9fc3de" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="16">大数据今日 48</text>
+
+    <rect x="28" y="342" width="464" height="126" rx="12" fill="#0f2a25" stroke="#24bfa6"/>
+    <text x="54" y="378" fill="#91f0dc" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="20" font-weight="700">推荐配置</text>
+    <text x="54" y="410" fill="#ccfff3" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="18">主词条：暴击伤害 / 攻击</text>
+    <text x="54" y="440" fill="#ccfff3" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="18">1档：暴击 / 暴击伤害</text>
+
+    <rect x="28" y="492" width="464" height="76" rx="12" fill="#2a2414" stroke="#d6a23d"/>
+    <text x="54" y="528" fill="#ffe4a4" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="20" font-weight="700">辅音状态</text>
+    <text x="54" y="554" fill="#f9d78a" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="17">下一孔有效率 38.5%  建议：暂存换胚</text>
+  </g>
+
+  <g transform="translate(734 152)" filter="url(#shadow)">
+    <rect x="0" y="0" width="686" height="466" rx="26" fill="#101923" stroke="#3e5168"/>
+    <rect x="34" y="42" width="618" height="338" rx="18" fill="#071019" stroke="#2c3f55"/>
+    <rect x="64" y="76" width="264" height="42" rx="9" fill="#1e2b37"/>
+    <rect x="64" y="140" width="520" height="30" rx="8" fill="#31404f"/>
+    <rect x="64" y="190" width="420" height="30" rx="8" fill="#273646"/>
+    <rect x="64" y="240" width="474" height="30" rx="8" fill="#2d3a48"/>
+    <rect x="64" y="290" width="372" height="30" rx="8" fill="#3d3422"/>
+    <rect x="84" y="92" width="190" height="9" fill="#dfe9f2"/>
+    <rect x="84" y="150" width="315" height="9" fill="#9eeadf"/>
+    <rect x="84" y="200" width="254" height="9" fill="#f5d987"/>
+    <rect x="84" y="250" width="302" height="9" fill="#a9c6e8"/>
+    <rect x="84" y="300" width="220" height="9" fill="#f5d987"/>
+
+    <rect x="0" y="400" width="686" height="66" rx="26" fill="#182332"/>
+    <text x="44" y="442" fill="#eff7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="22" font-weight="700">Echo Panel OCR</text>
+    <text x="452" y="442" fill="#75e0d0" font-family="Consolas, monospace" font-size="18">score 0.91</text>
+
+    <rect x="394" y="76" width="190" height="244" rx="14" fill="#101d28" stroke="#3b5267"/>
+    <path d="M418 274 L452 240 L486 254 L520 202 L554 224" fill="none" stroke="#75e0d0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M418 224 L452 216 L486 192 L520 180 L554 148" fill="none" stroke="#f5c86a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="418" y="118" fill="#9fc3de" font-family="Consolas, monospace" font-size="15">Bayes posterior</text>
+  </g>
+
+  <g transform="translate(840 650)">
+    <rect x="0" y="0" width="504" height="74" rx="16" fill="#13202c" stroke="#435b73"/>
+    <text x="26" y="45" fill="#eff7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="22" font-weight="700">Capture</text>
+    <path d="M132 37 H204" stroke="#75e0d0" stroke-width="4" stroke-linecap="round"/>
+    <text x="230" y="45" fill="#eff7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="22" font-weight="700">OCR</text>
+    <path d="M292 37 H364" stroke="#f5c86a" stroke-width="4" stroke-linecap="round"/>
+    <text x="390" y="45" fill="#eff7ff" font-family="Microsoft YaHei UI, Arial, sans-serif" font-size="22" font-weight="700">Advice</text>
+  </g>
+
+  <rect x="0" y="414" width="1600" height="34" fill="url(#scan)" opacity="0.7"/>
+</svg>

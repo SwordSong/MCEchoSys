@@ -1,0 +1,123 @@
+{
+  "_description": "YOLO 检测 + 固定比例 OCR 区域配置。",
+  "scene_detector": {
+    "enabled": true,
+    "confidence": 0.4,
+    "class_names": [
+      "echo_panel",
+      "enhance_panel"
+    ]
+  },
+  "ocr_regions": {
+    "echo_panel": {
+      "panel_bbox": [
+        0.7,
+        0.08,
+        0.99,
+        0.74
+      ],
+      "regions": [
+        {
+          "name": "echo_name",
+          "rect": [
+            0.74,
+            0.09,
+            0.95,
+            0.15
+          ]
+        },
+        {
+          "name": "cost_level",
+          "rect": [
+            0.74,
+            0.11,
+            0.89,
+            0.19
+          ]
+        },
+        {
+          "name": "main_stats",
+          "rect": [
+            0.74,
+            0.18,
+            0.99,
+            0.29
+          ]
+        },
+        {
+          "name": "substats",
+          "rect": [
+            0.74,
+            0.26,
+            0.99,
+            0.4
+          ]
+        },
+        {
+          "name": "set_effect",
+          "rect": [
+            0.74,
+            0.52,
+            0.99,
+            0.72
+          ]
+        }
+      ]
+    },
+    "enhance_panel": {
+      "panel_bbox": [
+        0.7,
+        0.08,
+        0.99,
+        0.74
+      ],
+      "regions": [
+        {
+          "name": "echo_name",
+          "rect": [
+            0.74,
+            0.09,
+            0.95,
+            0.15
+          ]
+        },
+        {
+          "name": "cost_level",
+          "rect": [
+            0.74,
+            0.11,
+            0.89,
+            0.19
+          ]
+        },
+        {
+          "name": "main_stats",
+          "rect": [
+            0.74,
+            0.18,
+            0.99,
+            0.29
+          ]
+        },
+        {
+          "name": "substats",
+          "rect": [
+            0.74,
+            0.26,
+            0.99,
+            0.4
+          ]
+        },
+        {
+          "name": "set_effect",
+          "rect": [
+            0.74,
+            0.52,
+            0.99,
+            0.72
+          ]
+        }
+      ]
+    }
+  }
+}

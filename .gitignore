@@ -1,0 +1,16 @@
+models/
+outputs/
+runs/
+dev/outputs/
+dev/yolo_dataset/
+__pycache__/
+*.py[cod]
+*.db
+*.db-shm
+*.db-wal
+.vscode/
+*.egg-info/
+dist/
+build/
+.venv/
+sync_client_to_github.ps1
