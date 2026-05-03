@@ -1,8 +1,7 @@
 models/
 outputs/
 runs/
-dev/outputs/
-dev/yolo_dataset/
+dev/
 __pycache__/
 *.py[cod]
 *.db
@@ -14,3 +13,4 @@ dist/
 build/
 .venv/
 sync_client_to_github.ps1
+.client.gitignore

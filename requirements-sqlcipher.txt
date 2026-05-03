@@ -1,0 +1,27 @@
+# Lightweight client / packaging environment.
+# Install with:
+#   uv pip install -r requirements-sqlcipher.txt
+
+# Core runtime
+opencv-python
+mss
+pyqt6
+numpy<2
+pandas
+requests
+sqlalchemy
+alembic
+psutil
+dxcam
+windows-capture
+rapidocr-onnxruntime>=1.4.4
+onnxruntime-directml
+markupsafe<3.0.3
+cryptography>=47.0.0
+
+# Local encrypted database support
+sqlcipher3>=0.6.2
+
+# Development / packaging
+pytest
+pyinstaller
