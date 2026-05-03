@@ -23,7 +23,7 @@ try:
 except ImportError:
     AESGCM = None
 
-
+# 没有更新吗？
 class DataSyncWorker(threading.Thread):
     def __init__(
         self,
