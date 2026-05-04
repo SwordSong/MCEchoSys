@@ -1298,6 +1298,10 @@ def main():
     command_queue = mp.Queue(maxsize=16)
     stop_event = mp.Event()
     db_write_key = generate_db_write_key()
+
+    from src.db import init_db
+    init_db(write_key=db_write_key)
+
     # 启动管线子进程，传入通信队列和退出事件
     proc = mp.Process(
         target=_pipeline_process_entry,

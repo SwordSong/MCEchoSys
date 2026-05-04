@@ -20,8 +20,13 @@ from src.db import (
 
 try:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, load_pem_public_key
 except ImportError:
     AESGCM = None
+    ec = None
 
 # 没有更新吗？
 class DataSyncWorker(threading.Thread):
@@ -48,12 +53,14 @@ class DataSyncWorker(threading.Thread):
         self.ip_lookup_urls = ("https://myip.ipip.net", "http://myip.ipip.net")
         self.api_url = "https://mc.ffxiv.ws/api/upload_substats"
         
-        # ⚠️ 安全注意：此处为硬编码示例 AES KEY。
-        # 实际部署时应改为从环境变量/安全配置文件读取，且长度必须为 32 bytes (256-bit)。
-        # 服务器端解密必须使用这同一个 Key。
-        self.secret_key = b"mc_enhance_sync_secret_key_32b!!" 
+        # ECC 公钥（基于 SECP256R1/P-256 曲线）。公钥直接硬编码即可，它只负责“上锁”，发给所有客户端也是绝对安全的。
+        # 服务端必须保管好配套的 private key 才能解开用该公钥协商出的加密数据包裹。
+        self.server_pub_key_pem = b"""-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE+poVQUE+VD8SuysR3B91DmIHHkJn
+AsbANpWRrfbOPdlJWm+WE4jq7uozLpkJJdArVM/Go2NopB6Vp1vV6bo+Lg==
+-----END PUBLIC KEY-----"""
         
-        if AESGCM is None:
+        if AESGCM is None or ec is None:
             print("[SyncWorker] 警告: 未安装 cryptography 库，无法行使加密传输。")
             
     def stop(self):
@@ -101,15 +108,35 @@ class DataSyncWorker(threading.Thread):
                 self._last_server_update_at = time.time()
 
     def _encrypt_data(self, json_str: str) -> str:
-        """使用 AES-GCM 进行对称加密，附带身份验证，防止数据截获与中间篡改"""
-        aesgcm = AESGCM(self.secret_key)
-        # 生成 12 字节的随机 IV (Nonce)，GCM 标准需要
+        """基于 ECC (Elliptic Curve Cryptography) + AES-GCM 的混合加密方案 (类似 ECIES)"""
+        # 1. 载入服务端的 ECC 公钥 (SECP256R1 / P-256)
+        server_public_key = load_pem_public_key(self.server_pub_key_pem)
+        
+        # 2. 客户端为本次请求随机生成【临时密钥对 (Ephemeral Key)】
+        ephemeral_private_key = ec.generate_private_key(ec.SECP256R1())
+        ephemeral_public_key_bytes = ephemeral_private_key.public_key().public_bytes(
+            Encoding.X962, PublicFormat.UncompressedPoint
+        ) # 固定为 65 字节的公钥序列
+        
+        # 3. ECDH 密钥交换：临时私钥 + 服务端公钥 计算出 -> 共享密钥 (Shared Secret)
+        shared_secret = ephemeral_private_key.exchange(ec.ECDH(), server_public_key)
+        
+        # 4. HKDF 密钥派生：将协商的曲线点共享密钥规范化为强随机的 32 字节 AES 密钥
+        derived_aes_key = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=None,
+            info=b'mc_sync_v1',
+        ).derive(shared_secret)
+        
+        # 5. 使用派生的 AES 密钥将原始 JSON 内容进行加密
+        aesgcm = AESGCM(derived_aes_key)
         nonce = os.urandom(12)
-        # 绑定 Tag / MAC 原理：底层自动计算 auth tag 并附加在密文末尾
         cipher_text = aesgcm.encrypt(nonce, json_str.encode('utf-8'), associated_data=None)
         
-        # 将 IV 和密文组合并 Base64 编码发出。服务器截取前 12 字节作 nonce 即可解密。
-        payload = nonce + cipher_text
+        # 6. 将各参数按结构打包发往后端：
+        # [临时公钥 65 bytes] + [GCM 随机 Nonce 12 bytes] + [密文与Tag验证体]
+        payload = ephemeral_public_key_bytes + nonce + cipher_text
         return base64.b64encode(payload).decode('utf-8')
 
     @staticmethod
@@ -170,7 +197,7 @@ class DataSyncWorker(threading.Thread):
         }
 
     def run(self):
-        if AESGCM is None:
+        if AESGCM is None or ec is None:
             return
             
         print(f"[SyncWorker] 本地大数据云端同步后台已启动。目标节点: {self.api_url}")
@@ -188,11 +215,12 @@ class DataSyncWorker(threading.Thread):
                                .order_by(EchoSubstat.id.asc())
                                .limit(100).all())
                     
+                    account_map = {}
+                    echo_info_map = {}
+                    echo_substats_list = []
+                    max_id_per_account = {}
+
                     if records:
-                        account_map = {}
-                        echo_info_map = {}
-                        echo_substats_list = []
-                        max_id_per_account = {}
                         for r in records:
                             # 3. Add account
                             if r.account_id not in account_map:
@@ -257,43 +285,46 @@ class DataSyncWorker(threading.Thread):
                             
                             max_id_per_account[r.account_id] = max(max_id_per_account.get(r.account_id, 0), r.id)
                         
-                        client_ip_info = self._get_public_ip_info()
-                        payload_data = {
-                            **client_ip_info,
-                            "accounts": list(account_map.values()),
-                            "echo_info": list(echo_info_map.values()),
-                            "echo_substats": echo_substats_list
-                        }
-                        
-                        json_str = json.dumps(payload_data, ensure_ascii=False)
-                        encrypted_payload = {
-                            "client_version": "1.0",
-                            "data": self._encrypt_data(json_str)
-                        }
-                        
-                        resp = requests.post(self.api_url, json=encrypted_payload, timeout=10)
-                        if resp.status_code == 200:
-                            try:
-                                resp_json = resp.json()
-                                if resp_json.get("status") == "success":
-                                    self._update_server_counts(resp_json)
-                                    counts = self.get_server_counts()
+                    client_ip_info = self._get_public_ip_info()
+                    payload_data = {
+                        **client_ip_info,
+                        "last_active_at": int(time.time()),
+                        "accounts": list(account_map.values()),
+                        "echo_info": list(echo_info_map.values()),
+                        "echo_substats": echo_substats_list
+                    }
+                    
+                    json_str = json.dumps(payload_data, ensure_ascii=False)
+                    encrypted_payload = {
+                        "client_version": "1.0",
+                        "data": self._encrypt_data(json_str)
+                    }
+                    
+                    # 无论是否有新的强化样本都发送心跳保证活跃状态
+                    resp = requests.post(self.api_url, json=encrypted_payload, timeout=10)
+                    if resp.status_code == 200:
+                        try:
+                            resp_json = resp.json()
+                            if resp_json.get("status") == "success":
+                                self._update_server_counts(resp_json)
+                                counts = self.get_server_counts()
+                                if echo_substats_list:
                                     print(
                                         f"[SyncWorker] 成功打包上传了 {len(echo_substats_list)} 条强化样本至远端大数据中心! "
                                         f"服务器响应已确认。total_count={counts.get('total_count')} "
                                         f"today_count={counts.get('today_count')}"
                                     )
-                                    # 更新各个 Account 的 last_sync_substat_id
-                                    with sess.write_enabled(self.db_write_key):
-                                        for acc_id, m_id in max_id_per_account.items():
-                                            sess.query(Account).filter_by(id=acc_id).update({"last_sync_substat_id": m_id})
-                                        sess.commit()
-                                else:
-                                    print(f"[SyncWorker] 上传未能确认，服务器返回非success状态: {resp_json}")
-                            except Exception as parse_e:
-                                print(f"[SyncWorker] 服务器返回了200但非期望的JSON响应格式: {parse_e}")
-                        else:
-                            print(f"[SyncWorker] 上传失败，服务器拒绝请求，状态码: {resp.status_code}")
+                                # 更新各个 Account 的 last_sync_substat_id
+                                with sess.write_enabled(self.db_write_key):
+                                    for acc_id, m_id in max_id_per_account.items():
+                                        sess.query(Account).filter_by(id=acc_id).update({"last_sync_substat_id": m_id})
+                                    sess.commit()
+                            else:
+                                print(f"[SyncWorker] 上传未能确认，服务器返回非success状态: {resp_json}")
+                        except Exception as parse_e:
+                            print(f"[SyncWorker] 服务器返回了200但非期望的JSON响应格式: {parse_e}")
+                    else:
+                        print(f"[SyncWorker] 上传失败，服务器拒绝请求，状态码: {resp.status_code}")
                             
             except Exception as e:
                 print(f"[SyncWorker] 同步循环遇到网络或解析异常: {e}")

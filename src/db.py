@@ -243,8 +243,12 @@ def _encrypt_plain_sqlite_database(db_file: Path, passphrase: str, dbapi_module:
     try:
         with sqlite3.connect(str(db_file)) as plain_conn:
             plain_conn.execute("PRAGMA wal_checkpoint(FULL)")
+        plain_conn.close()
     except Exception:
         pass
+
+    import gc
+    gc.collect()
 
     conn = dbapi_module.connect(str(db_file))
     try:
@@ -291,11 +295,10 @@ def _prepare_sqlcipher_database(path: str):
 
     passphrase = _load_or_create_sqlcipher_key()
     if db_file is not None and db_file.exists() and db_file.stat().st_size > 0:
-        if not _can_open_sqlcipher(db_file, passphrase, dbapi_module):
-            if _can_open_plain_sqlite(db_file):
-                _encrypt_plain_sqlite_database(db_file, passphrase, dbapi_module)
-            else:
-                raise RuntimeError(f"Cannot open SQLCipher database with current local key: {db_file}")
+        if _can_open_plain_sqlite(db_file):
+            _encrypt_plain_sqlite_database(db_file, passphrase, dbapi_module)
+        elif not _can_open_sqlcipher(db_file, passphrase, dbapi_module):
+            raise RuntimeError(f"Cannot open SQLCipher database with current local key: {db_file}")
 
     return {
         "module": dbapi_module,
