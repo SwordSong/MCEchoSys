@@ -11,16 +11,124 @@ import os
 import time
 import html
 import multiprocessing as mp
+from pathlib import Path
 from typing import Dict, Any, Optional, List, Set
 from src.db import generate_db_write_key
 from src.sync import DataSyncWorker
 
+_DLL_DIRECTORY_HANDLES = []
+_NATIVE_DLL_HANDLES = []
+
+
+def _add_native_dll_dir(path: Path):
+    if not path.exists():
+        return
+    path_text = str(path)
+    path_parts = os.environ.get("PATH", "").split(os.pathsep)
+    if path_text not in path_parts:
+        os.environ["PATH"] = path_text + os.pathsep + os.environ.get("PATH", "")
+    if hasattr(os, "add_dll_directory"):
+        try:
+            # Keep the handle alive. If it is garbage-collected, Windows removes
+            # the directory from the DLL search path.
+            _DLL_DIRECTORY_HANDLES.append(os.add_dll_directory(path_text))
+        except Exception as dll_e:
+            print(f"Failed to add dll directory {path_text}: {dll_e}")
+
+
+def _configure_native_dll_paths():
+    if not getattr(sys, "frozen", False):
+        return
+
+    base = Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    exe_dir = Path(sys.executable).resolve().parent
+    for candidate in (
+        base / "onnxruntime" / "capi",
+        base,
+        exe_dir / "onnxruntime" / "capi",
+        exe_dir,
+    ):
+        _add_native_dll_dir(candidate)
+
+    _preload_onnxruntime_dlls(base, exe_dir)
+
+
+def _preload_onnxruntime_dlls(base: Path, exe_dir: Path):
+    try:
+        import ctypes
+    except Exception:
+        return
+
+    load_mode = 0x00000100 | 0x00001000  # DLL_LOAD_DIR | DEFAULT_DIRS
+    for runtime_dir in (base, exe_dir):
+        if not runtime_dir.exists():
+            continue
+        for dll_name in (
+            "vcruntime140.dll",
+            "vcruntime140_1.dll",
+            "msvcp140.dll",
+            "msvcp140_1.dll",
+            "concrt140.dll",
+        ):
+            dll_path = runtime_dir / dll_name
+            if not dll_path.exists():
+                continue
+            try:
+                _NATIVE_DLL_HANDLES.append(ctypes.WinDLL(str(dll_path), winmode=load_mode))
+            except Exception as dll_e:
+                print(f"Failed to preload {dll_path}: {dll_e}")
+
+    capi_dirs = [
+        base / "onnxruntime" / "capi",
+        exe_dir / "onnxruntime" / "capi",
+    ]
+    dll_names = (
+        "onnxruntime_providers_shared.dll",
+        "DirectML.dll",
+        "onnxruntime.dll",
+    )
+
+    for capi_dir in capi_dirs:
+        if not capi_dir.exists():
+            continue
+        for dll_name in dll_names:
+            dll_path = capi_dir / dll_name
+            if not dll_path.exists():
+                continue
+            try:
+                _NATIVE_DLL_HANDLES.append(ctypes.WinDLL(str(dll_path), winmode=load_mode))
+            except Exception as dll_e:
+                print(f"Failed to preload {dll_path}: {dll_e}")
+
+
+def _run_ort_smoke_test_if_requested():
+    if "--ort-smoke-test" not in sys.argv:
+        return
+    try:
+        import onnxruntime as ort
+
+        providers = ort.get_available_providers()
+        print(f"onnxruntime={ort.__version__} providers={providers}")
+        if "DmlExecutionProvider" not in providers:
+            print("DmlExecutionProvider is missing")
+            sys.exit(3)
+        sys.exit(0)
+    except Exception:
+        import traceback
+
+        traceback.print_exc()
+        sys.exit(2)
+
+
+_configure_native_dll_paths()
+
 # 动态链接库冲突修复：在 Windows 上，PyQt6 可能会与 onnxruntime 竞争/污染 DLL 加载环境。
-# 这里我们需要在导入 PyQt6 相关模块前，先将 onnxruntime 提前导入以锁定所需 DLL 例程。
+# 这里在导入 PyQt6 前先尝试预加载 onnxruntime；若失败，后续启动阶段会给出明确错误。
+_run_ort_smoke_test_if_requested()
 try:
     import onnxruntime
-except ImportError:
-    pass
+except Exception as e:
+    print(f"ONNX Runtime preload failed; OCR startup will report details: {e}")
 
 from PyQt6 import QtWidgets, QtCore, QtGui
 
@@ -227,6 +335,20 @@ class SceneMarkerOverlay(QtWidgets.QWidget):
 
 # ── 管线子进程入口 ────────────────────────────────────────────
 def _pipeline_process_entry(result_queue, stop_event, command_queue=None, db_write_key=None):
+    try:
+        _pipeline_process_entry_impl(result_queue, stop_event, command_queue, db_write_key)
+    except Exception as e:
+        import traceback
+        try:
+            from src.resources import runtime_logs_dir
+
+            error_path = runtime_logs_dir() / "child_error.txt"
+            error_path.write_text(traceback.format_exc(), encoding="utf-8")
+        except Exception:
+            print(traceback.format_exc())
+        raise
+
+def _pipeline_process_entry_impl(result_queue, stop_event, command_queue=None, db_write_key=None):
     """
     【后台 AI/数据推断 独立进程入口】
     在另一个进程空间跑 PipelineRunner (截屏->YOLO->OCR->入库)。
@@ -279,13 +401,26 @@ def _pipeline_process_entry(result_queue, stop_event, command_queue=None, db_wri
 
         if not getattr(runner, "_disable_ocr", False):
             _emit_startup(62, "加载 OCR 引擎")
-            runner._ensure_ocr()
+            ocr = runner._ensure_ocr()
+            ocr_backend = getattr(ocr, "backend", "none")
+            if ocr is None or str(ocr_backend).startswith("disabled"):
+                raise RuntimeError(
+                    "OCR 启动失败："
+                    f"backend={ocr_backend} "
+                    f"reason={getattr(ocr, 'disabled_reason', None)} "
+                    f"providers={getattr(ocr, 'available_providers', None)}"
+                )
         else:
             _emit_startup(62, "OCR 已按配置跳过")
 
         if not getattr(runner, "_capture_only", False):
             _emit_startup(78, "加载场景检测模型")
-            runner._ensure_detector()
+            detector = runner._ensure_detector()
+            if detector is None or not getattr(detector, "ready", False):
+                raise RuntimeError(
+                    "场景检测模型启动失败："
+                    f"model={getattr(runner, '_detector_model_path', None)}"
+                )
         else:
             _emit_startup(78, "检测模型已按配置跳过")
 

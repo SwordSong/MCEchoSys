@@ -39,6 +39,20 @@ def app_data_dir() -> Path:
     return base / "mc-enhance-helper"
 
 
+def runtime_base_dir() -> Path:
+    """Return the directory beside the running executable, or cwd in source runs."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path.cwd()
+
+
+def runtime_logs_dir() -> Path:
+    """Return the writable logs directory next to the running program."""
+    target = runtime_base_dir() / "logs"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
 def _copy_if_missing(source: Path, target: Path):
     if target.exists() or not source.exists() or not source.is_file():
         return

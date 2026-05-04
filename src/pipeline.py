@@ -19,7 +19,7 @@ from src.preprocess import enhance_for_ocr, crop_bbox, upscale_if_small
 from src.parser import parse_texts
 from src.probability import FrequencyModel, BayesianUpdater, ActionStrategyAdvisor, SubstatPosteriorModel
 from src.recognition_debug import RecognitionDebugDumper
-from src.resources import resource_path, writable_data_path
+from src.resources import resource_path, runtime_logs_dir, writable_data_path
 from src.strategy_config import load_strategy_priority_profile_with_meta
 from src.db import (
     Account,
@@ -204,7 +204,7 @@ class PipelineRunner:
             echo_dictionary_path=writable_data_path(echo_dictionary_path),
             substat_values_path=writable_data_path(substat_values_path),
         )
-        self.debug_dumper = RecognitionDebugDumper(base_dir="outputs/recognition")
+        self.debug_dumper = RecognitionDebugDumper(base_dir=str(runtime_logs_dir() / "recognition"))
         self.on_result = on_result  # UI callback
         self._tick_count = 0
         self.game_day_reset_hour = game_day_reset_hour

@@ -1,6 +1,6 @@
 """recognition_debug.py
 
-统一将识别相关截图输出到 outputs 目录。
+统一将识别相关截图输出到运行目录的 logs 子目录。
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ except Exception:
 
 
 class RecognitionDebugDumper:
-    def __init__(self, base_dir: str = "outputs/recognition"):
+    def __init__(self, base_dir: str):
         self.base_dir = base_dir
         self.uid_dir = os.path.join(base_dir, "uid")
         self.panel_dir = os.path.join(base_dir, "panel")

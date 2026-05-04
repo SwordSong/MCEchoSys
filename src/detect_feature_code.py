@@ -26,6 +26,7 @@ except Exception:
 
 from src.capture import CaptureWorker
 from src.recognition_debug import RecognitionDebugDumper
+from src.resources import runtime_logs_dir
 
 # (top, left, bottom, right)
 # 右下角 UID 区域，适配“特征码: 123456789”常见位置
@@ -334,7 +335,7 @@ def main():
     worker = CaptureWorker(proc_name="Client-Win64-Shipping.exe", fps=5)
     worker.start()
     ocr = OCR(use_gpu=True)
-    dumper = RecognitionDebugDumper(base_dir="outputs/recognition")
+    dumper = RecognitionDebugDumper(base_dir=str(runtime_logs_dir() / "recognition"))
 
     last_uid = None
     consistent_count = 0

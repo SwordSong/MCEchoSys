@@ -25,6 +25,7 @@ class OCR:
         self.model = None
         self.backend = "unavailable"
         self.disabled_reason = None
+        self.available_providers: List[str] = []
         
         if not self.use_gpu:
             self.disabled_reason = "gpu_required"
@@ -39,6 +40,25 @@ class OCR:
             return
 
         try:
+            import onnxruntime as ort
+
+            self.available_providers = list(ort.get_available_providers())
+        except Exception as e:
+            self.disabled_reason = "onnxruntime_provider_check_failed"
+            self.backend = "disabled-onnxruntime-provider-check-failed"
+            print(f"[OCR] 无法检查 ONNX Runtime provider: {e}")
+            return
+
+        if "DmlExecutionProvider" not in self.available_providers:
+            self.disabled_reason = f"dml_provider_unavailable:{self.available_providers}"
+            self.backend = "disabled-no-directml"
+            print(
+                "[OCR] DirectML provider 不可用，已停止 OCR。"
+                f" providers={self.available_providers}"
+            )
+            return
+
+        try:
             print("[OCR] 正在初始化 RapidOCR (ONNX DirectML GPU)...")
             # 强制开启 DML，如果不支持会抛出回退/不使用
             self.model = RapidOCR(
@@ -47,7 +67,7 @@ class OCR:
                 rec_use_dml=True
             )
             self.backend = "rapidocr-gpu"
-            print(f"[OCR] backend={self.backend} mode=GPU-only")
+            print(f"[OCR] backend={self.backend} mode=GPU-only providers={self.available_providers}")
         except Exception as e:
             self.disabled_reason = "rapidocr_init_failed"
             self.backend = "disabled-rapidocr-failed"

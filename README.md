@@ -105,7 +105,7 @@ scripts\build_windows.bat
 | `MC_DISABLE_DB` | `0` | 禁用数据库写入 |
 | `MC_DISABLE_STRATEGY` | `0` | 禁用策略建议计算 |
 | `MC_CAPTURE_ONLY` | `0` | 只运行捕获链路 |
-| `MC_DEBUG_DUMP` | `0` | 保存 UID / 面板调试截图到 `outputs/recognition` |
+| `MC_DEBUG_DUMP` | `0` | 保存 UID / 面板调试截图到程序运行目录的 `logs/recognition` |
 | `MC_IDLE_INTERVAL` | `0.3` | 浮窗子进程空闲轮询间隔 |
 | `MC_ACTIVE_INTERVAL` | `1.5` | 浮窗子进程识别成功后的轮询间隔 |
 
@@ -345,4 +345,4 @@ $env:MC_UID_CROP_BOX="0.95,0.82,1.0,0.995"
 
 **OCR 后端是什么**
 
-当前代码使用 `rapidocr-onnxruntime` 和 `onnxruntime-directml`。历史文档中提到的 PaddleOCR 已不是当前主路径。
+当前代码使用 RapidOCR + `onnxruntime-directml`。`rapidocr-onnxruntime` 只能用 `--no-deps` 安装，否则会把 CPU 版 `onnxruntime` 拉回开发环境；打包脚本已按这个方式处理。历史文档中提到的 PaddleOCR 已不是当前主路径。
