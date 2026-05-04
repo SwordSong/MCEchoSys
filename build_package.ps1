@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 #
 # The release package uses YOLO ONNX + ONNX Runtime/DirectML. It deliberately
 # excludes CUDA Torch/ultralytics so the published _internal directory stays
-# much smaller than the development environment.
+# much smaller than the development environment.test
 
 Set-Location $PSScriptRoot
 
@@ -65,6 +65,6 @@ $pyInstallerArgs = @(
 uv run pyinstaller @pyInstallerArgs
 
 Write-Host ""
-Write-Host "Build finished: dist\mc-enhance-helper\mc-enhance-helper.exe"
+Write-Host "Build finished: dist\mc-enhance-helper\鸣潮声骸助手.exe"
 Write-Host "If you need console logs, change --windowed to --console in build_package.ps1."
 Write-Host "This package uses models\yolov8_custom.onnx and does not ship CUDA Torch."
