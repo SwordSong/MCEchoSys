@@ -2,7 +2,7 @@
 
 实时声骸面板识别、词条解析、调谐槽位判断和强化策略辅助工具。项目面向 Windows 桌面环境，使用本地截图、RapidOCR、YOLO 和 SQLite 完成离线识别与记录。
 
-> 当前检查结果：`uv run python -B -m pytest tests/test_basic.py -q` 通过，56 个测试全部成功。
+当前处于初步阶段，需要收集大量数据
 
 ## 功能概览
 
